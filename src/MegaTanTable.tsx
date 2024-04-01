@@ -1,11 +1,19 @@
 import React, {useCallback} from "react";
 import {TableVirtuoso} from "react-virtuoso";
 import {
-  Table, Thead, Tbody, Tr, Th, Td, Button, Input, Box, Flex, Heading, Text,
   Accordion,
-  AccordionItem,
   AccordionButton,
+  AccordionItem,
   AccordionPanel,
+  Box,
+  Button,
+  Flex,
+  Heading,
+  Table,
+  Td,
+  Text,
+  Th,
+  Tr,
 } from '@chakra-ui/react';
 
 import {
