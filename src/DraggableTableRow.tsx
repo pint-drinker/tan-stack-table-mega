@@ -10,11 +10,12 @@ type DraggableTableRowProps = {
 }
 
 export function DraggableTableRow({row, index, moveRow, ...props}: DraggableTableRowProps) {
-  const ref = React.useRef(null);
+  const [isRowDragging, setIsRowDragging] = React.useState(false);
+  const dropRef = React.useRef(null);
   const [, drop] = useDrop({
     accept: "row",
     drop(item) {
-      if (!ref.current) {
+      if (!dropRef.current) {
         return;
       }
       const dragIndex = item.index;
@@ -32,41 +33,61 @@ export function DraggableTableRow({row, index, moveRow, ...props}: DraggableTabl
     },
   });
 
-  const [{isDragging}, drag] = useDrag({
-    type: "row",
-    item: () => {
-      return {index, row};
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
+  drop(dropRef)
 
-  drag(drop(ref));
+  // Only apply the drag source to the specific cell acting as the drag handle
+  const dragHandleProps = (columnId: string) => {
+    if (columnId === "control") {
+      const [{ isDragging }, drag] = useDrag({
+        type: "row",
+        item: () => {
+          return { index, row };
+        },
+        collect: (monitor) => ({
+          isDragging: monitor.isDragging(),
+        }),
+      });
 
-  // TODO: make the ref only hit the drag handle child so we can do cell selection otherwise...but
-  //  we still want to visualize dragging the whole row
+      React.useEffect(() => {
+        setIsRowDragging(isDragging);
+      }, [isDragging])
+
+      // Attach the drag ref to the cell
+      return {
+        ref: drag,
+        style: {
+          cursor: "grab",
+          opacity: isDragging ? 0.5 : 1,
+        },
+      };
+    }
+
+    return {};
+  };
+
   return (
     <Tr
-      // ref={ref}
-      {...props}
-      style={{
-        ...props.style,
-        opacity: isDragging ? 0 : 1,
+      ref={dropRef}
+      {...{
+        opacity: isRowDragging ? 0.5 : 1,
       }}
+      {...props}
     >
-      {row.getVisibleCells().map((cell) => (
-        <Td
-          key={cell.id}
-          style={{padding: "6px"}}
-          ref={cell.column.id === "control" ? ref : null}
-        >
-          {flexRender(
-            cell.column.columnDef.cell,
-            cell.getContext(),
-          )}
-        </Td>
-      ))}
+      {
+        row.getVisibleCells().map((cell) => {
+          const dragProps = dragHandleProps(cell.column.id);
+          return (
+            <Td
+              key={cell.id}
+              padding="6px"
+              ref={dragProps.ref ?? null}
+              style={{...dragProps.style}}
+            >
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </Td>
+          );
+        })
+      }
     </Tr>
   );
 }

@@ -1,4 +1,4 @@
-import React, {useCallback} from "react";
+import React, {useCallback, useRef} from "react";
 import {TableVirtuoso} from "react-virtuoso";
 import {
   Accordion,
@@ -10,7 +10,6 @@ import {
   Flex,
   Heading, Input,
   Table,
-  Td,
   Text,
   Th,
   Tr,
@@ -37,7 +36,7 @@ export function MegaTanTable() {
     () => [
       {
         id: 'control',
-        size: 120,
+        size: 130,
         header: ({table, header}) => (
           <Box width={`${header.column.getSize()}px`}>
             <IndeterminateCheckbox
@@ -57,26 +56,29 @@ export function MegaTanTable() {
           </Box>
         ),
         cell: ({row, cell}) => (
-          <Box paddingLeft={`${row.depth * 2}rem`} width={`${cell.column.getSize()}px`}>
-            <DragHandleIcon/>
-            <IndeterminateCheckbox
-              {...{
-                checked: row.getIsSelected(),
-                indeterminate: row.getIsSomeSelected(),
-                onChange: row.getToggleSelectedHandler(),
-              }}
-            />{" "}
-            {row.getCanExpand() ? (
-              <button
+          <Flex>
+            <Text fontSize="xs">{row.id}</Text>
+            <Box paddingLeft={`${row.depth * 2}rem`} width={`${cell.column.getSize()}px`}>
+              <DragHandleIcon/>
+              <IndeterminateCheckbox
                 {...{
-                  onClick: row.getToggleExpandedHandler(),
-                  style: {cursor: "pointer"},
+                  checked: row.getIsSelected(),
+                  indeterminate: row.getIsSomeSelected(),
+                  onChange: row.getToggleSelectedHandler(),
                 }}
-              >
-                {row.getIsExpanded() ? "👇" : "👉"}
-              </button>
-            ) : null}
-          </Box>
+              />{" "}
+              {row.getCanExpand() ? (
+                <button
+                  {...{
+                    onClick: row.getToggleExpandedHandler(),
+                    style: {cursor: "pointer"},
+                  }}
+                >
+                  {row.getIsExpanded() ? "👇" : "👉"}
+                </button>
+              ) : null}
+            </Box>
+          </Flex>
         ),
         footer: (props) => props.column.id,
       },
