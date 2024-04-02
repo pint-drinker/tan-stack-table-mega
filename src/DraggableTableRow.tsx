@@ -1,15 +1,17 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {useDrag, useDrop} from "react-dnd";
-import {Td, Tr} from "@chakra-ui/react";
-import {flexRender, Row} from "@tanstack/react-table";
+import {Tr} from "@chakra-ui/react";
+import {BodyCellWrapper} from "./components/BodyCell.tsx";
+import {useSpreadsheetGrid} from "./SpreadsheetGrid.tsx";
 
 type DraggableTableRowProps = {
-  row: Row<any>;
   index: number;
-  moveRow: (dragId: string, dropId: string) => void;
 }
 
-export function DraggableTableRow({row, index, moveRow, ...props}: DraggableTableRowProps) {
+export function DraggableTableRow({index, ...props}: DraggableTableRowProps) {
+  const { rows, rowIdToFlatRowIndex, moveRow } = useSpreadsheetGrid();
+  const row = rows[index];
+  const flatRowIndex = rowIdToFlatRowIndex[row.id];
   const [isRowDragging, setIsRowDragging] = React.useState(false);
   const dropRef = React.useRef(null);
   const [, drop] = useDrop({
@@ -35,57 +37,38 @@ export function DraggableTableRow({row, index, moveRow, ...props}: DraggableTabl
 
   drop(dropRef)
 
-  // Only apply the drag source to the specific cell acting as the drag handle
-  const dragHandleProps = (columnId: string) => {
-    if (columnId === "control") {
-      const [{ isDragging }, drag] = useDrag({
-        type: "row",
-        item: () => {
-          return { index, row };
-        },
-        collect: (monitor) => ({
-          isDragging: monitor.isDragging(),
-        }),
-      });
+  const [{ isDragging }, dragRef] = useDrag({
+    type: "row",
+    item: () => {
+      return { index, row };
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
 
-      React.useEffect(() => {
-        setIsRowDragging(isDragging);
-      }, [isDragging])
-
-      // Attach the drag ref to the cell
-      return {
-        ref: drag,
-        style: {
-          cursor: "grab",
-          opacity: isDragging ? 0.5 : 1,
-        },
-      };
-    }
-
-    return {};
-  };
+  useEffect(() => {
+    setIsRowDragging(isDragging);
+  }, [isDragging])
 
   return (
     <Tr
       ref={dropRef}
-      {...{
-        opacity: isRowDragging ? 0.5 : 1,
-      }}
+      opacity={isRowDragging ? 0.5 : 1}
       {...props}
     >
       {
-        row.getVisibleCells().map((cell) => {
-          const dragProps = dragHandleProps(cell.column.id);
+        row.getVisibleCells().map((cell, index) => {
           return (
-            <Td
+            <BodyCellWrapper
               key={cell.id}
-              padding="6px"
-              ref={dragProps.ref ?? null}
-              style={{...dragProps.style}}
-            >
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </Td>
-          );
+              cell={cell}
+              flatRowIndex={flatRowIndex}
+              columnIndex={index}
+              dragRef={dragRef}
+              isDragging={isDragging}
+            />
+          )
         })
       }
     </Tr>
