@@ -8,13 +8,14 @@ import {
   Box,
   Button,
   Flex,
-  Heading,
+  Heading, Input,
   Table,
   Td,
   Text,
   Th,
   Tr,
 } from '@chakra-ui/react';
+import { DragHandleIcon } from '@chakra-ui/icons'
 
 import {
   ColumnDef,
@@ -35,9 +36,10 @@ export function MegaTanTable() {
   const columns = React.useMemo<ColumnDef<Person>[]>(
     () => [
       {
-        accessorKey: "firstName",
-        header: ({table}) => (
-          <>
+        id: 'control',
+        size: 120,
+        header: ({table, header}) => (
+          <Box width={`${header.column.getSize()}px`}>
             <IndeterminateCheckbox
               {...{
                 checked: table.getIsAllRowsSelected(),
@@ -52,44 +54,36 @@ export function MegaTanTable() {
             >
               {table.getIsAllRowsExpanded() ? "👇" : "👉"}
             </button>
-            {" "}
-            First Name
-          </>
-        ),
-        cell: ({row, getValue}) => (
-          <Box
-            style={{
-              // Since rows are flattened by default,
-              // we can use the row.depth property
-              // and paddingLeft to visually indicate the depth
-              // of the row
-              paddingLeft: `${row.depth * 2}rem`,
-            }}
-          >
-            <Box>
-              <IndeterminateCheckbox
-                {...{
-                  checked: row.getIsSelected(),
-                  indeterminate: row.getIsSomeSelected(),
-                  onChange: row.getToggleSelectedHandler(),
-                }}
-              />{" "}
-              {row.getCanExpand() ? (
-                <button
-                  {...{
-                    onClick: row.getToggleExpandedHandler(),
-                    style: {cursor: "pointer"},
-                  }}
-                >
-                  {row.getIsExpanded() ? "👇" : "👉"}
-                </button>
-              ) : (
-                "🔵"
-              )}{" "}
-              {getValue<boolean>()}
-            </Box>
           </Box>
         ),
+        cell: ({row, cell}) => (
+          <Box paddingLeft={`${row.depth * 2}rem`} width={`${cell.column.getSize()}px`}>
+            <DragHandleIcon/>
+            <IndeterminateCheckbox
+              {...{
+                checked: row.getIsSelected(),
+                indeterminate: row.getIsSomeSelected(),
+                onChange: row.getToggleSelectedHandler(),
+              }}
+            />{" "}
+            {row.getCanExpand() ? (
+              <button
+                {...{
+                  onClick: row.getToggleExpandedHandler(),
+                  style: {cursor: "pointer"},
+                }}
+              >
+                {row.getIsExpanded() ? "👇" : "👉"}
+              </button>
+            ) : null}
+          </Box>
+        ),
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorFn: (row) => row.firstName,
+        id: "firstName",
+        header: () => <Text>First Name</Text>,
         footer: (props) => props.column.id,
       },
       {
@@ -100,7 +94,8 @@ export function MegaTanTable() {
       },
       {
         accessorKey: "age",
-        header: () => "Age",
+        id: "name",
+        header: () => <Text>Age</Text>,
         footer: (props) => props.column.id,
       },
       {
@@ -138,7 +133,9 @@ export function MegaTanTable() {
 
       // When the input is blurred, we'll call our table meta's updateData function
       const onBlur = () => {
-        table.options.meta?.updateData(index, rowId, columnId, value);
+        if (value !== initialValue) {
+          table.options.meta?.updateData(index, rowId, columnId, value);
+        }
       };
 
       // If the initialValue is changed external, sync it up with our state
@@ -146,13 +143,10 @@ export function MegaTanTable() {
         setValue(initialValue);
       }, [initialValue]);
 
+      // TODO: is chakra input not as fast?
       return (
-        <input
-          value={value as string}
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={onBlur}
-        />
-      );
+        <Input value={value as string} onChange={(e) => setValue(e.target.value)} onBlur={onBlur}/>
+      )
     },
   };
 
@@ -227,7 +221,7 @@ export function MegaTanTable() {
                   {...props}
                   style={{
                     ...style,
-                    width: "100%",
+                    width: "unset",
                     tableLayout: "fixed",
                     borderCollapse: "collapse",
                     borderSpacing: 0,
@@ -244,16 +238,7 @@ export function MegaTanTable() {
                   index={index}
                   moveRow={moveRow}
                   {...props}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <Td key={cell.id} style={{padding: "6px"}}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </Td>
-                  ))}
-                </DraggableTableRow>
+                />
               );
             },
           }}
@@ -262,7 +247,7 @@ export function MegaTanTable() {
               <Tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <Th key={header.id} colSpan={header.colSpan}>
+                    <Th key={header.id} colSpan={header.colSpan} padding="6px">
                       {header.isPlaceholder ? null : (
                         <Box>
                           {flexRender(

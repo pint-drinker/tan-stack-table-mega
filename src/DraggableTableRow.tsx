@@ -1,8 +1,15 @@
 import React from "react";
 import {useDrag, useDrop} from "react-dnd";
-import {Tr} from "@chakra-ui/react";
+import {Td, Tr} from "@chakra-ui/react";
+import {flexRender, Row} from "@tanstack/react-table";
 
-export function DraggableTableRow({row, index, moveRow, ...props}) {
+type DraggableTableRowProps = {
+  row: Row<any>;
+  index: number;
+  moveRow: (dragId: string, dropId: string) => void;
+}
+
+export function DraggableTableRow({row, index, moveRow, ...props}: DraggableTableRowProps) {
   const ref = React.useRef(null);
   const [, drop] = useDrop({
     accept: "row",
@@ -37,16 +44,29 @@ export function DraggableTableRow({row, index, moveRow, ...props}) {
 
   drag(drop(ref));
 
+  // TODO: make the ref only hit the drag handle child so we can do cell selection otherwise...but
+  //  we still want to visualize dragging the whole row
   return (
     <Tr
-      ref={ref}
+      // ref={ref}
       {...props}
       style={{
         ...props.style,
         opacity: isDragging ? 0 : 1,
       }}
     >
-      {props.children}
+      {row.getVisibleCells().map((cell) => (
+        <Td
+          key={cell.id}
+          style={{padding: "6px"}}
+          ref={cell.column.id === "control" ? ref : null}
+        >
+          {flexRender(
+            cell.column.columnDef.cell,
+            cell.getContext(),
+          )}
+        </Td>
+      ))}
     </Tr>
   );
 }
