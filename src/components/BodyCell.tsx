@@ -115,8 +115,8 @@ export const BodyCellInternal = ({
             rangeDataObject.enclosedRight ? 'blue' : 'transparent'
           }
           position="absolute"
-          top={'-1px'}
-          left={'-1px'}
+          top={0}
+          left={0}
           height={"100%"}
           width={"100%"}
         />

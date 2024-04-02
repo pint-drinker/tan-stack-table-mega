@@ -2,14 +2,14 @@ import React, {useEffect} from "react";
 import {useDrag, useDrop} from "react-dnd";
 import {Tr} from "@chakra-ui/react";
 import {BodyCellWrapper} from "./components/BodyCell.tsx";
-import {useSpreadsheetGrid} from "./SpreadsheetGrid.tsx";
+import {useTableContext} from "./tableContext.tsx";
 
 type DraggableTableRowProps = {
   index: number;
 }
 
 export function DraggableTableRow({index, ...props}: DraggableTableRowProps) {
-  const { rows, rowIdToFlatRowIndex, moveRow } = useSpreadsheetGrid();
+  const { rows, rowIdToFlatRowIndex, moveRow } = useTableContext();
   const row = rows[index];
   const flatRowIndex = rowIdToFlatRowIndex[row.id];
   const [isRowDragging, setIsRowDragging] = React.useState(false);
