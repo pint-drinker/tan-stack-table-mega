@@ -13,7 +13,6 @@ type BodyCellWrapperInternalProps = {
   isDragging: boolean;
 };
 
-// TODO: memoize more? the drag props may be messing us up
 export const BodyCellWrapper = ({
   cell,
   flatRowIndex,
@@ -96,6 +95,7 @@ export const BodyCellInternal = ({
       onMouseEnter={onMouseEnter}
       onFocus={onFocus}
       position="relative"
+      userSelect="none"
     >
       {(rangeDataObject.enclosedBottom || rangeDataObject.enclosedTop || rangeDataObject.enclosedLeft || rangeDataObject.enclosedRight) && (
         <Box
