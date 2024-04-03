@@ -28,7 +28,7 @@ export const BodyCellWrapper = ({
   } = useSpreadsheetGrid();
 
   const spreadsheetCell = useMemo(() => {
-    return { row: flatRowIndex, column: columnIndex };
+    return { row: parseInt(flatRowIndex), column: columnIndex };
   }, [flatRowIndex, columnIndex])
 
   const onInteract = useCallback(
@@ -85,7 +85,7 @@ export const BodyCellInternal = ({
 }: BodyCellInternalProps) => {
   const rangeDataObject: SpreadsheetSelectionRangeObject =
     JSON.parse(rangeData);
-
+  // TODO: clean up border styling
   return (
     <Td
       tabIndex={0}
@@ -97,23 +97,10 @@ export const BodyCellInternal = ({
       position="relative"
       userSelect="none"
     >
-      {(rangeDataObject.enclosedBottom || rangeDataObject.enclosedTop || rangeDataObject.enclosedLeft || rangeDataObject.enclosedRight) && (
+      {rangeDataObject.inRange && (
         <Box
-          border="1px solid"
-          background={'blue'}
+          background={rangeDataObject.inRange ? 'blue' : "none"}
           opacity={0.5}
-          borderBottomColor={
-            rangeDataObject.enclosedBottom ? 'blue' : 'transparent'
-          }
-          borderTopColor={
-            rangeDataObject.enclosedTop ? 'blue' : 'transparent'
-          }
-          borderLeftColor={
-            rangeDataObject.enclosedLeft ? 'blue' : 'transparent'
-          }
-          borderRightColor={
-            rangeDataObject.enclosedRight ? 'blue' : 'transparent'
-          }
           position="absolute"
           top={0}
           left={0}

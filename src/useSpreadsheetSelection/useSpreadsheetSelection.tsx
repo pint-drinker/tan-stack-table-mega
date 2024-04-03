@@ -35,6 +35,7 @@ export const useSpreadsheetSelection = ({
   numberOfColumns,
   onAttemptCopy,
   getContentOfCell,
+  expandedState = true,
 }: UseSpreadsheetSelectionProps): UseSpreadsheetSelectionReturns => {
   const [selectedCell, setSelectedCell] =
     useState<SpreadsheetSelectionCell | null>(null);
@@ -196,9 +197,6 @@ export const useSpreadsheetSelection = ({
     }
   }, []);
 
-  useEffect(() => {
-    console.log('body on cell interact changing')
-  }, []);
   const bodyCellOnMouseEnter = useCallback(
     (
       cell: SpreadsheetSelectionCell,
