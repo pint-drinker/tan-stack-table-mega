@@ -13,7 +13,7 @@ export interface UseSpreadsheetSelectionProps {
   numberOfColumns: number;
   onAttemptCopy: (content: string) => void;
   getContentOfCell: (content: SpreadsheetSelectionCell) => string;
-  expandedState?: boolean | Record<string, boolean>;
+  visibleRowNumbers?: number[];
 }
 
 export interface SpreadsheetSelectionRangeObject {

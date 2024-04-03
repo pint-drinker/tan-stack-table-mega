@@ -35,7 +35,7 @@ export const useSpreadsheetSelection = ({
   numberOfColumns,
   onAttemptCopy,
   getContentOfCell,
-  expandedState = true,
+  visibleRowNumbers,
 }: UseSpreadsheetSelectionProps): UseSpreadsheetSelectionReturns => {
   const [selectedCell, setSelectedCell] =
     useState<SpreadsheetSelectionCell | null>(null);
@@ -156,6 +156,7 @@ export const useSpreadsheetSelection = ({
                 translateParams,
                 numberOfRows,
                 numberOfColumns,
+                visibleRowNumbers,
               ),
             );
           }
@@ -167,13 +168,14 @@ export const useSpreadsheetSelection = ({
                 translateParams,
                 numberOfRows,
                 numberOfColumns,
+                visibleRowNumbers,
               ),
             );
           }
         }
       }
     },
-    [getContentOfCell, numberOfColumns, numberOfRows, onAttemptCopy],
+    [getContentOfCell, numberOfColumns, numberOfRows, onAttemptCopy, visibleRowNumbers],
   );
 
   // BODY CELL STUFF ------------------------------------------------------------------------ //

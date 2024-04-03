@@ -216,14 +216,65 @@ export const generateCopyPasteText = (
   return copyPasteText;
 };
 
+/**
+ * Implements a binary search for finding the nearest number in a sorted array with
+ * respect to the delta input. If delta is negative, it will find the nearest less than
+ * or equal to number in the array (or the minimum). If the delta is positive, it will find
+ * the nearest greater than or equal to number in the array (or the maximum).
+ */
+const findNearestNumberWithDelta = (arr: number[], input: number, delta: number): number => {
+  // If delta is zero, return the input as per the new requirement.
+  if (delta === 0) return input;
+
+  // Adjust input by adding delta to set the new target.
+  const target = input + delta;
+
+  if (arr.length === 0) {
+    throw new Error("The array is empty.");
+  }
+
+  // Handle cases where the adjusted input (target) is outside the bounds of the array
+  if (target >= arr[arr.length - 1]) return arr[arr.length - 1];
+  if (target <= arr[0]) return arr[0];
+
+  let start = 0;
+  let end = arr.length - 1;
+
+  while (start <= end) {
+    let mid = Math.floor((start + end) / 2);
+
+    if (arr[mid] === target) {
+      return arr[mid];
+    } else if (arr[mid] < target) {
+      start = mid + 1;
+    } else {
+      end = mid - 1;
+    }
+  }
+
+  // For positive deltas, if target is not found, return the next highest number.
+  // For negative deltas, return the next smallest number.
+  // This adjustment ensures the output is >= input + delta for positive deltas, or
+  // <= input + delta for negative deltas.
+  return delta > 0 ? arr[start] : arr[end];
+};
+
 export const translateCell = (
   cell: SpreadsheetSelectionCell,
   cellDelta: SpreadsheetSelectionCell,
   numberOfRows: number,
   numberOfColumns: number,
+  visibleRowNumbers?: number[],
 ) => {
-  return {
-    row: limitValue(cell.row + cellDelta.row, 0, numberOfRows - 1),
-    column: limitValue(cell.column + cellDelta.column, 0, numberOfColumns - 1),
-  };
+  if (!visibleRowNumbers) {
+    return {
+      row: limitValue(cell.row + cellDelta.row, 0, numberOfRows - 1),
+      column: limitValue(cell.column + cellDelta.column, 0, numberOfColumns - 1),
+    };
+  } else {
+    return {
+      row: findNearestNumberWithDelta(visibleRowNumbers, cell.row, cellDelta.row),
+      column: limitValue(cell.column + cellDelta.column, 0, numberOfColumns - 1),
+    };
+  }
 };

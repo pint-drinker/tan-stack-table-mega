@@ -218,17 +218,25 @@ export function MegaTanTable() {
     debugTable: true,
   });
 
+  // rows are the currently expanded rows...
   const {rows, flatRows, rowsById} = table.getRowModel();
   const { rowIdToFlatRowIndex } = useMemo(() => {
-    const t1 = performance.now()
     const rowIdToFlatRowIndex: Record<string, number> = {};
-    for (const flatRowIndex in flatRows) {
-      const row = flatRows[flatRowIndex];
-      rowIdToFlatRowIndex[row.id] = flatRowIndex
+    let i = 0;
+    for (const flatRow of flatRows) {
+      rowIdToFlatRowIndex[flatRow.id] = i;
+      i += 1;
     }
-    console.log('flat rows changing', performance.now() - t1)
     return { rowIdToFlatRowIndex };
   }, [flatRows])
+
+  const { visibleFlatRowNumbers } = useMemo(() => {
+    const visibleFlatRowNumbers: number[] = [];
+    for (const expandedRow of rows) {
+      visibleFlatRowNumbers.push(rowIdToFlatRowIndex[expandedRow.id]);
+    }
+    return { visibleFlatRowNumbers };
+  }, [rows, rowIdToFlatRowIndex])
 
   const moveRow = useCallback(
     (dragIndex: string, dropIndex: string) => {
@@ -306,6 +314,7 @@ export function MegaTanTable() {
     numberOfColumns,
     onAttemptCopy,
     getContentOfCell,
+    visibleRowNumbers: visibleFlatRowNumbers,
   });
 
   return (

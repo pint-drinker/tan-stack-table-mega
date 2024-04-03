@@ -28,7 +28,7 @@ export const BodyCellWrapper = ({
   } = useSpreadsheetGrid();
 
   const spreadsheetCell = useMemo(() => {
-    return { row: parseInt(flatRowIndex), column: columnIndex };
+    return { row: flatRowIndex, column: columnIndex };
   }, [flatRowIndex, columnIndex])
 
   const onInteract = useCallback(
