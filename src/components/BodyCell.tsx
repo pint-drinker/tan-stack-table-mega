@@ -101,13 +101,15 @@ export const BodyCellInternal = ({
     }
   }, [selected]);
 
-  const onEditTrigger = useCallback((event) => {
-    const rect = event.target.getBoundingClientRect();
-    enableEdit(cell, rect);
-  }, [selected])
+  const onEditTrigger = useCallback(() => {
+    if (ref.current) {
+      const rect = ref.current?.getBoundingClientRect();
+      enableEdit(cell, rect);
+    }
+  }, [selected, ref.current])
 
   // TODO: clean up border styling
-  // TODO: clean up cell interactions - enter to begin editing
+  // TODO: clean up cell interactions - enter to begin editing, etc.
   return (
     <Td
       ref={ref}

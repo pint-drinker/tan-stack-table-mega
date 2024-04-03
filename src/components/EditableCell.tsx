@@ -87,6 +87,7 @@ export const EditableCell = ({cell, cellRect, commitData, closeEdit}: EditableCe
       <Input
         transition="none"
         padding={0}
+        paddingLeft="6px"
         margin={0}
         border={0}
         borderRadius={0}
