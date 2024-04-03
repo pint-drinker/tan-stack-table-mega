@@ -1,5 +1,5 @@
 import { createContext } from '@chakra-ui/react-utils';
-import {Row} from "@tanstack/react-table";
+import {Cell, Row} from "@tanstack/react-table";
 import {Person} from "./makeData.ts";
 
 const [TableContextProvider, useTableContext] = createContext<{
@@ -7,6 +7,8 @@ const [TableContextProvider, useTableContext] = createContext<{
   rowIdToFlatRowIndex: Record<string, number>;
   rowsById: Record<string, Row<Person>>;
   moveRow: (dragRowIndex: string, dropRowIndex: string) => void;
+  enableEdit: (cell: Cell<Person, unknown>, cellRect: object) => void;
+  disableEdit: () => void;
 }>({
   name: 'TanStackTableContext',
   strict: true,

@@ -1,9 +1,11 @@
-import React, {useCallback, MouseEvent, memo, useMemo} from "react";
+import React, {useCallback, MouseEvent, memo, useMemo, useEffect, useRef, MouseEventHandler} from "react";
 import {Box, Td} from "@chakra-ui/react";
 import {Cell, flexRender} from "@tanstack/react-table";
 import {Person} from "../makeData.ts";
 import {useSpreadsheetGrid} from "../SpreadsheetGrid.tsx";
 import {SpreadsheetSelectionRangeObject} from "../useSpreadsheetSelection";
+import {useTableContext} from "../tableContext.tsx";
+import {InputPosition} from "./EditableCell.tsx";
 
 type BodyCellWrapperInternalProps = {
   cell: Cell<Person, unknown>;
@@ -26,6 +28,7 @@ export const BodyCellWrapper = ({
     bodyCellOnInteract,
     bodyCellOnMouseEnter,
   } = useSpreadsheetGrid();
+  const { enableEdit } = useTableContext();
 
   const spreadsheetCell = useMemo(() => {
     return { row: flatRowIndex, column: columnIndex };
@@ -63,6 +66,7 @@ export const BodyCellWrapper = ({
         rangeData={bodyCellRangeData(spreadsheetCell)}
         onFocus={onInteract}
         onMouseEnter={onMouseEnter}
+        enableEdit={enableEdit}
       />
     );
   }
@@ -74,6 +78,7 @@ type BodyCellInternalProps = {
   rangeData: string;
   onFocus: React.MouseEventHandler<HTMLDivElement>;
   onMouseEnter: React.MouseEventHandler<HTMLDivElement>;
+  enableEdit: (cell: Cell<Person, unknown>, cellRect: InputPosition) => void;
 };
 
 export const BodyCellInternal = ({
@@ -82,18 +87,37 @@ export const BodyCellInternal = ({
   rangeData,
   onFocus,
   onMouseEnter,
+  enableEdit,
 }: BodyCellInternalProps) => {
+  const ref = useRef<HTMLDivElement>();
+
   const rangeDataObject: SpreadsheetSelectionRangeObject =
     JSON.parse(rangeData);
+
+  // TODO remove this? check if its currently focused?
+  useEffect(() => {
+    if (selected === true) {
+      ref.current?.focus();
+    }
+  }, [selected]);
+
+  const onEditTrigger = useCallback((event) => {
+    const rect = event.target.getBoundingClientRect();
+    enableEdit(cell, rect);
+  }, [selected])
+
   // TODO: clean up border styling
+  // TODO: clean up cell interactions - enter to begin editing
   return (
     <Td
+      ref={ref}
       tabIndex={0}
       padding="6px"
       background={selected ? 'cyan' : 'white'}
       border="1px solid"
       onMouseEnter={onMouseEnter}
       onFocus={onFocus}
+      onDoubleClick={onEditTrigger}
       position="relative"
       userSelect="none"
     >

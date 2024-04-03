@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {TableVirtuoso} from "react-virtuoso";
 import {
   Accordion,
@@ -9,13 +9,12 @@ import {
   Button,
   Flex,
   Heading,
-  Input,
   Table,
   Text,
   Th,
   Tr,
 } from '@chakra-ui/react';
-import { DragHandleIcon } from '@chakra-ui/icons'
+import {DragHandleIcon} from '@chakra-ui/icons'
 
 import {
   ColumnDef,
@@ -34,6 +33,7 @@ import {DraggableTableRow} from "./DraggableTableRow.tsx";
 import {SpreadsheetSelectionCell, useSpreadsheetSelection} from "./useSpreadsheetSelection";
 import {SpreadsheetGridProvider} from "./SpreadsheetGrid.tsx";
 import {TableContextProvider} from "./tableContext.tsx";
+import {EditableCell, useEditableCell} from "./components/EditableCell.tsx";
 
 const SAMPLE_DATA_SIZE = 500;
 
@@ -63,7 +63,7 @@ const TableRowComponent = (props) => {
 };
 
 export function MegaTanTable() {
-  const columns = React.useMemo<ColumnDef<Person>[]>(
+  const columns = useMemo<ColumnDef<Person>[]>(
     () => [
       {
         id: 'control',
@@ -114,20 +114,17 @@ export function MegaTanTable() {
         footer: (props) => props.column.id,
       },
       {
-        accessorFn: (row) => row.firstName,
-        id: "firstName",
+        accessorKey: "firstName",
         header: () => <Text>First Name</Text>,
         footer: (props) => props.column.id,
       },
       {
-        accessorFn: (row) => row.lastName,
-        id: "lastName",
+        accessorKey: "lastName",
         header: () => <Text>Last Name</Text>,
         footer: (props) => props.column.id,
       },
       {
         accessorKey: "age",
-        id: "name",
         header: () => <Text>Age</Text>,
         footer: (props) => props.column.id,
       },
@@ -138,53 +135,45 @@ export function MegaTanTable() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: () => <Text>Status</Text>,
         footer: (props) => props.column.id,
       },
       {
         accessorKey: "progress",
-        header: "Profile Progress",
+        header: () => <Text>Profile progress</Text>,
         footer: (props) => props.column.id,
       },
     ],
     [],
   );
 
-  const [data, setData] = React.useState(() => makeData(SAMPLE_DATA_SIZE, 5, 3));
+  const [data, setData] = useState(() => makeData(SAMPLE_DATA_SIZE, 5, 3));
   const refreshData = () => setData(() => makeData(SAMPLE_DATA_SIZE, 5, 3));
 
-  const [expanded, setExpanded] = React.useState<ExpandedState>({});
+  const [expanded, setExpanded] = useState<ExpandedState>({});
 
-  // Give our default column cell renderer editing superpowers!
-  const defaultColumn: Partial<ColumnDef<Person>> = {
-    cell: ({getValue, row, column, table}) => {
-      const {index, id: rowId} = row;
-      const {id: columnId} = column;
-      const initialValue = getValue();
-      // We need to keep and update the state of the cell normally
-      const [value, setValue] = React.useState(initialValue);
+  const defaultColumn = useMemo(() => {
+    return {
+      cell: ({ getValue }) => {
+        return <Text>{getValue()}</Text>
+      },
+    };
+  }, []);
 
-      // When the input is blurred, we'll call our table meta's updateData function
-      const onBlur = () => {
-        if (value !== initialValue) {
-          table.options.meta?.updateData(index, rowId, columnId, value);
-        }
+  const updateData = useCallback((rowId: string, columnId: string, value: any) => {
+    setData((old) => {
+      // TODO: speed this up?
+      const integerIndices = rowId.split(".");
+      const out = [...old];
+      const oldRow = navigateTree(out, integerIndices);
+      const newRow = {
+        ...oldRow,
+        [columnId]: value,
       };
-
-      // If the initialValue is changed external, sync it up with our state
-      React.useEffect(() => {
-        setValue(initialValue);
-      }, [initialValue]);
-
-      // TODO: is chakra input not as fast?
-      // TODO: implement a separate editable component that activates when typing
-      //  in the cell or hitting enter...like google sheets
-      return <Text>{value}</Text>
-      return (
-        <Input value={value as string} onChange={(e) => setValue(e.target.value)} onBlur={onBlur}/>
-      )
-    },
-  };
+      Object.assign(oldRow, newRow);
+      return out;
+    });
+  }, []);
 
   const table = useReactTable({
     data,
@@ -199,22 +188,7 @@ export function MegaTanTable() {
     getExpandedRowModel: getExpandedRowModel(),
     defaultColumn,
     // Provide our updateData function to our table meta
-    meta: {
-      updateData: (rowIndex, rowId, columnId, value) => {
-        setData((old) => {
-          // TODO: speed this up?
-          const integerIndices = rowId.split(".");
-          const out = [...old];
-          const oldRow = navigateTree(out, integerIndices);
-          const newRow = {
-            ...oldRow,
-            [columnId]: value,
-          };
-          Object.assign(oldRow, newRow);
-          return out;
-        });
-      },
-    },
+    meta: { updateData },
     debugTable: true,
   });
 
@@ -299,6 +273,14 @@ export function MegaTanTable() {
     // [flatRows],
   );
 
+  const {
+    editCell,
+    enableEdit,
+    disableEdit,
+    isEditing,
+    inputPosition,
+  } = useEditableCell();
+
   // Using the standardized, headless spreadsheet selection hook.
   const {
     gridOnKeyDown,
@@ -315,6 +297,7 @@ export function MegaTanTable() {
     onAttemptCopy,
     getContentOfCell,
     visibleRowNumbers: visibleFlatRowNumbers,
+    isEditing,
   });
 
   return (
@@ -330,10 +313,12 @@ export function MegaTanTable() {
     >
       <TableContextProvider
         value={{
+          rows,
           rowIdToFlatRowIndex,
           rowsById,
-          rows,
           moveRow,
+          enableEdit,
+          disableEdit,
         }}
       >
         <Flex direction="column" gap={2}>
@@ -342,6 +327,7 @@ export function MegaTanTable() {
             style={{height: "800px", overflow: "auto"}}
             ref={gridRef}
             onKeyDown={(event) => {
+              // TODO: build out more of this
               if (false) {
                 event.preventDefault();
               } else {
@@ -356,7 +342,6 @@ export function MegaTanTable() {
                 Table: TableComponent,
                 TableRow: TableRowComponent,
               }}
-              // TODO: use ItemContent?
               fixedHeaderContent={() => {
                 return table.getHeaderGroups().map((headerGroup) => (
                   <Tr key={headerGroup.id}>
@@ -383,6 +368,9 @@ export function MegaTanTable() {
                 ));
               }}
             />
+            {isEditing && Boolean(editCell) && Boolean(inputPosition) && (
+              <EditableCell cell={editCell} cellRect={inputPosition} commitData={updateData} closeEdit={disableEdit}/>
+            )}
           </Box>
           <Text fontSize="lg">{flatRows.length} total rows</Text>
           <Box>

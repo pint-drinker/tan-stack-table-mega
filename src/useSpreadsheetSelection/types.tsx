@@ -14,6 +14,7 @@ export interface UseSpreadsheetSelectionProps {
   onAttemptCopy: (content: string) => void;
   getContentOfCell: (content: SpreadsheetSelectionCell) => string;
   visibleRowNumbers?: number[];
+  isEditing?: boolean;
 }
 
 export interface SpreadsheetSelectionRangeObject {
