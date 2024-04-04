@@ -1,5 +1,5 @@
-import React, {useCallback, MouseEvent, memo, useMemo, useEffect, useRef, MouseEventHandler} from "react";
-import {Box, Td} from "@chakra-ui/react";
+import React, {useCallback, MouseEvent, memo, useMemo, useEffect, useRef} from "react";
+import {Box, Td, Text} from "@chakra-ui/react";
 import {Cell, flexRender} from "@tanstack/react-table";
 import {Person} from "../makeData.ts";
 import {useSpreadsheetGrid} from "../SpreadsheetGrid.tsx";
@@ -7,31 +7,66 @@ import {SpreadsheetSelectionRangeObject} from "../useSpreadsheetSelection";
 import {useTableContext} from "../tableContext.tsx";
 import {InputPosition} from "./EditableCell.tsx";
 
-type BodyCellWrapperInternalProps = {
+type FileCellProps = {
   cell: Cell<Person, unknown>;
-  flatRowIndex: number;
-  columnIndex: number;
+}
+
+const FileCell = ({cell}: FileCellProps) => {
+  // TODO: implement a drag and drop
+  return (
+    <Td
+      key={cell.id}
+      tabIndex={0}
+      padding="6px"
+      border="1px solid"
+    >
+      <Text>{String(cell.getValue())}</Text>
+    </Td>
+  );
+};
+
+type ControlCellProps = {
+  cell: Cell<Person, unknown>;
   dragRef: React.Ref<unknown> | null;
   isDragging: boolean;
 };
 
+const ControlCell = ({cell, dragRef, isDragging}: ControlCellProps) => {
+  return (
+    <Td
+      key={cell.id}
+      tabIndex={0}
+      padding="6px"
+      ref={dragRef}
+      style={isDragging ? {cursor: 'grab', opacity: 0.5} : {}}
+    >
+      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+    </Td>
+  );
+};
+
+type BodyCellWrapperInternalProps = ControlCellProps & {
+  flatRowIndex: number;
+  columnIndex: number;
+};
+
 export const BodyCellWrapper = ({
-  cell,
-  flatRowIndex,
-  columnIndex,
-  dragRef,
-  isDragging,
-}: BodyCellWrapperInternalProps) => {
+                                  cell,
+                                  flatRowIndex,
+                                  columnIndex,
+                                  dragRef,
+                                  isDragging,
+                                }: BodyCellWrapperInternalProps) => {
   const {
     bodyCellSelected,
     bodyCellRangeData,
     bodyCellOnInteract,
     bodyCellOnMouseEnter,
   } = useSpreadsheetGrid();
-  const { enableEdit } = useTableContext();
+  const {enableEdit} = useTableContext();
 
   const spreadsheetCell = useMemo(() => {
-    return { row: flatRowIndex, column: columnIndex };
+    return {row: flatRowIndex, column: columnIndex};
   }, [flatRowIndex, columnIndex])
 
   const onInteract = useCallback(
@@ -45,30 +80,28 @@ export const BodyCellWrapper = ({
     [bodyCellOnMouseEnter, spreadsheetCell],
   );
 
-  if (cell.column.id === "control") {
-    return (
-      <Td
-        key={cell.id}
-        tabIndex={0}
-        padding="6px"
-        ref={dragRef}
-        style={isDragging ? {cursor: 'grab', opacity: 0.5} : {}}
-      >
-        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-      </Td>
-    );
-  } else {
-    return (
-      <BodyCell
-        key={cell.id}
-        cell={cell}
-        selected={bodyCellSelected(spreadsheetCell)}
-        rangeData={bodyCellRangeData(spreadsheetCell)}
-        onFocus={onInteract}
-        onMouseEnter={onMouseEnter}
-        enableEdit={enableEdit}
-      />
-    );
+  switch (cell.column.id) {
+    case "control":
+      return (
+        <ControlCell cell={cell} dragRef={dragRef} isDragging={isDragging}/>
+      );
+    case "file":
+      return (
+        <FileCell cell={cell}/>
+      )
+    default:
+      return (
+        <BodyCell
+          key={cell.id}
+          cell={cell}
+          selected={bodyCellSelected(spreadsheetCell)}
+          rangeData={bodyCellRangeData(spreadsheetCell)}
+          onFocus={onInteract}
+          onMouseEnter={onMouseEnter}
+          enableEdit={enableEdit}
+        />
+      );
+
   }
 };
 
@@ -82,19 +115,19 @@ type BodyCellInternalProps = {
 };
 
 export const BodyCellInternal = ({
-  cell,
-  selected,
-  rangeData,
-  onFocus,
-  onMouseEnter,
-  enableEdit,
-}: BodyCellInternalProps) => {
+                                   cell,
+                                   selected,
+                                   rangeData,
+                                   onFocus,
+                                   onMouseEnter,
+                                   enableEdit,
+                                 }: BodyCellInternalProps) => {
   const ref = useRef<HTMLDivElement>();
 
   const rangeDataObject: SpreadsheetSelectionRangeObject =
     JSON.parse(rangeData);
 
-  // TODO remove this? check if its currently focused?
+  // TODO remove this? check if its currently focused instead of refocusing?
   useEffect(() => {
     if (selected === true) {
       ref.current?.focus();

@@ -1,11 +1,16 @@
 import { faker } from '@faker-js/faker'
 
+export type File = {
+  filename: string;
+  id: string;
+};
+
 export type Person = {
   firstName: string
   lastName: string
   age: number
   visits: number
-  progress: number
+  file: File | null,
   status: 'relationship' | 'complicated' | 'single'
   subRows?: Person[]
 }
@@ -24,7 +29,7 @@ const newPerson = (): Person => {
     lastName: faker.person.lastName(),
     age: faker.number.int(40),
     visits: faker.number.int(1000),
-    progress: faker.number.int(100),
+    file: null,
     status: faker.helpers.shuffle<Person['status']>([
       'relationship',
       'complicated',
@@ -44,5 +49,7 @@ export function makeData(...lens: number[]) {
     })
   }
 
-  return makeDataLevel()
-}
+  const out = makeDataLevel()
+  out[0].file = { filename: 'sample.step', id: 'abcdefg' };
+  return out;
+};

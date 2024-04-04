@@ -6,7 +6,6 @@ export function IndeterminateCheckbox({
   className = "",
   ...rest
 }: { indeterminate?: boolean } & HTMLProps<HTMLInputElement>) {
-  // TODO: do we need the ref nonsense?
   return (
     <Checkbox
       isChecked={rest.checked}

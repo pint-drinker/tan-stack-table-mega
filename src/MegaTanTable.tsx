@@ -1,14 +1,17 @@
 import {useCallback, useMemo, useState} from "react";
 import {TableVirtuoso} from "react-virtuoso";
 import {
-  Accordion,
-  AccordionButton,
-  AccordionItem,
-  AccordionPanel,
   Box,
   Button,
   Flex,
+  FormControl,
+  FormLabel,
   Heading,
+  NumberDecrementStepper,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
   Table,
   Text,
   Th,
@@ -34,8 +37,6 @@ import {SpreadsheetSelectionCell, useSpreadsheetSelection} from "./useSpreadshee
 import {SpreadsheetGridProvider} from "./SpreadsheetGrid.tsx";
 import {TableContextProvider} from "./tableContext.tsx";
 import {EditableCell, useEditableCell} from "./components/EditableCell.tsx";
-
-const SAMPLE_DATA_SIZE = 500;
 
 const TableComponent = ({style, ...props}) => {
   return (
@@ -63,6 +64,36 @@ const TableRowComponent = (props) => {
 };
 
 export function MegaTanTable() {
+  const [dataSize, setDataSize] = useState<number>(1000);
+  const [childDepth1, setChildDepth1] = useState<number>(5);
+  const [childDepth2, setChildDepth2] = useState<number>(3);
+  const [data, setData] = useState(() => makeData(dataSize, childDepth1, childDepth2));
+  const refreshData = () => setData(() => makeData(dataSize, childDepth1, childDepth2));
+  const [expanded, setExpanded] = useState<ExpandedState>({});
+
+  const defaultColumn = useMemo(() => {
+    return {
+      cell: ({getValue}) => {
+        return <Text>{String(getValue())}</Text>
+      },
+    };
+  }, []);
+
+  const updateData = useCallback((rowId: string, columnId: string, value: any) => {
+    setData((old) => {
+      // TODO: speed this up?
+      const integerIndices = rowId.split(".");
+      const out = [...old];
+      const oldRow = navigateTree(out, integerIndices);
+      const newRow = {
+        ...oldRow,
+        [columnId]: value,
+      };
+      Object.assign(oldRow, newRow);
+      return out;
+    });
+  }, []);
+
   const columns = useMemo<ColumnDef<Person>[]>(
     () => [
       {
@@ -139,41 +170,13 @@ export function MegaTanTable() {
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "progress",
-        header: () => <Text>Profile progress</Text>,
+        accessorKey: "file",
+        header: () => <Text>File</Text>,
         footer: (props) => props.column.id,
       },
     ],
     [],
   );
-
-  const [data, setData] = useState(() => makeData(SAMPLE_DATA_SIZE, 5, 3));
-  const refreshData = () => setData(() => makeData(SAMPLE_DATA_SIZE, 5, 3));
-
-  const [expanded, setExpanded] = useState<ExpandedState>({});
-
-  const defaultColumn = useMemo(() => {
-    return {
-      cell: ({ getValue }) => {
-        return <Text>{getValue()}</Text>
-      },
-    };
-  }, []);
-
-  const updateData = useCallback((rowId: string, columnId: string, value: any) => {
-    setData((old) => {
-      // TODO: speed this up?
-      const integerIndices = rowId.split(".");
-      const out = [...old];
-      const oldRow = navigateTree(out, integerIndices);
-      const newRow = {
-        ...oldRow,
-        [columnId]: value,
-      };
-      Object.assign(oldRow, newRow);
-      return out;
-    });
-  }, []);
 
   const table = useReactTable({
     data,
@@ -188,28 +191,28 @@ export function MegaTanTable() {
     getExpandedRowModel: getExpandedRowModel(),
     defaultColumn,
     // Provide our updateData function to our table meta
-    meta: { updateData },
+    meta: {updateData},
     debugTable: true,
   });
 
   // rows are the currently expanded rows...
   const {rows, flatRows, rowsById} = table.getRowModel();
-  const { rowIdToFlatRowIndex } = useMemo(() => {
+  const {rowIdToFlatRowIndex} = useMemo(() => {
     const rowIdToFlatRowIndex: Record<string, number> = {};
     let i = 0;
     for (const flatRow of flatRows) {
       rowIdToFlatRowIndex[flatRow.id] = i;
       i += 1;
     }
-    return { rowIdToFlatRowIndex };
+    return {rowIdToFlatRowIndex};
   }, [flatRows])
 
-  const { visibleFlatRowNumbers } = useMemo(() => {
+  const {visibleFlatRowNumbers} = useMemo(() => {
     const visibleFlatRowNumbers: number[] = [];
     for (const expandedRow of rows) {
       visibleFlatRowNumbers.push(rowIdToFlatRowIndex[expandedRow.id]);
     }
-    return { visibleFlatRowNumbers };
+    return {visibleFlatRowNumbers};
   }, [rows, rowIdToFlatRowIndex])
 
   const moveRow = useCallback(
@@ -218,6 +221,7 @@ export function MegaTanTable() {
         // TODO: take advantage of the rows, flat rows, or rowsById to improve
         //  performance here? Since its already invalidating when we update the
         //  data...
+        // TODO: prevent a parent from being moved to within its children
         const out = moveEntityCorrectly(
           prevData,
           dragIndex.split("."),
@@ -321,8 +325,73 @@ export function MegaTanTable() {
           disableEdit,
         }}
       >
-        <Flex direction="column" gap={2}>
-          <Heading>All cells editable. Have fun reparenting!</Heading>
+        <Flex direction="column" gap={2} padding={1}>
+          <Heading fontSize="xl">TanStack Table Mega-Demo</Heading>
+          <Text>Select rows, expand/collapse rows, reorder rows, select cell ranges, double click to edit cells with
+            dynamic widths!</Text>
+          <Flex gap={1} alignItems="center">
+            <Box>
+              <FormControl>
+                <FormLabel fontSize="sm">Top level data size</FormLabel>
+                <NumberInput
+                  size="sm"
+                  value={dataSize}
+                  min={2}
+                  max={2000}
+                  onChange={(_, newNum) => setDataSize(newNum)}
+                  width="150px"
+                >
+                  <NumberInputField/>
+                  <NumberInputStepper>
+                    <NumberIncrementStepper/>
+                    <NumberDecrementStepper/>
+                  </NumberInputStepper>
+                </NumberInput>
+              </FormControl>
+            </Box>
+            <Box>
+              <FormControl>
+                <FormLabel fontSize="sm">Child depth 1</FormLabel>
+                <NumberInput
+                  size="sm"
+                  value={childDepth1}
+                  min={1}
+                  max={10}
+                  onChange={(_, newNum) => setChildDepth1(newNum)}
+                  width="150px"
+                >
+                  <NumberInputField/>
+                  <NumberInputStepper>
+                    <NumberIncrementStepper/>
+                    <NumberDecrementStepper/>
+                  </NumberInputStepper>
+                </NumberInput>
+              </FormControl>
+            </Box>
+            <Box>
+              <FormControl>
+                <FormLabel fontSize="sm">Child depth 2</FormLabel>
+                <NumberInput
+                  size="sm"
+                  value={childDepth2}
+                  min={0}
+                  max={10}
+                  onChange={(_, newNum) => setChildDepth2(newNum)}
+                  width="150px"
+                >
+                  <NumberInputField/>
+                  <NumberInputStepper>
+                    <NumberIncrementStepper/>
+                    <NumberDecrementStepper/>
+                  </NumberInputStepper>
+                </NumberInput>
+              </FormControl>
+            </Box>
+            <Box>
+              <Button colorScheme="teal" onClick={() => refreshData()}>Refresh Data</Button>
+            </Box>
+            <Text fontSize="lg">{flatRows.length} total rows</Text>
+          </Flex>
           <Box
             style={{height: "800px", overflow: "auto"}}
             ref={gridRef}
@@ -372,27 +441,8 @@ export function MegaTanTable() {
               <EditableCell cell={editCell} cellRect={inputPosition} commitData={updateData} closeEdit={disableEdit}/>
             )}
           </Box>
-          <Text fontSize="lg">{flatRows.length} total rows</Text>
-          <Box>
-            <Button colorScheme="teal" onClick={() => refreshData()}>Refresh Data</Button>
-          </Box>
-          <Accordion allowToggle={true}>
-            <AccordionItem>
-              <AccordionButton>
-                <Box as="span" flex='1' textAlign='left'>
-                  State details
-                </Box>
-              </AccordionButton>
-              <AccordionPanel>
-                <label>Expanded State:</label>
-                <pre>{JSON.stringify(expanded, null, 2)}</pre>
-                <label>Row Selection State:</label>
-                <pre>{JSON.stringify(table.getState().rowSelection, null, 2)}</pre>
-              </AccordionPanel>
-            </AccordionItem>
-          </Accordion>
         </Flex>
       </TableContextProvider>
     </SpreadsheetGridProvider>
   );
-}
+};

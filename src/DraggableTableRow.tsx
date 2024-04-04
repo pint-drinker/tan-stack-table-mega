@@ -73,4 +73,4 @@ export function DraggableTableRow({index, ...props}: DraggableTableRowProps) {
       }
     </Tr>
   );
-}
+};

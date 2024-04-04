@@ -36,7 +36,7 @@ export const useSpreadsheetSelection = ({
   onAttemptCopy,
   getContentOfCell,
   visibleRowNumbers,
-  isEditing = false,
+  isEditing = false,  // TODO: make this an internally managed variable we pass out
 }: UseSpreadsheetSelectionProps): UseSpreadsheetSelectionReturns => {
   const [selectedCell, setSelectedCell] =
     useState<SpreadsheetSelectionCell | null>(null);
